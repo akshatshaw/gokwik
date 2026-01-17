@@ -1,0 +1,1 @@
+An intelligent Q&A system that answers questions based solely on your documents using LangChain and Streamlit. Built with RAG (Retrieval Augmented Generation) to provide grounded, accurate answers with source citations.

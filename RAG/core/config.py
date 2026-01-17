@@ -1,0 +1,7 @@
+# Configuration constants
+DEFAULT_MODEL = "gpt-3.5-turbo"
+DEFAULT_CHUNK_SIZE = 1000
+DEFAULT_CHUNK_OVERLAP = 200
+DEFAULT_K_DOCUMENTS = 3
+VECTOR_DB_PATH = "./chroma_db"
+DOCUMENTS_PATH = "./documents"

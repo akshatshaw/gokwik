@@ -1,0 +1,1 @@
+This is a repo containing Projects as assignment for GoKwik Intern.
