@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Agentic Workflow Builder</title>
+    <link rel="stylesheet" href="/static/css/style.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div class="container">
+      <!-- Header -->
+      <header>
+        <div class="logo">
+          <div class="logo-icon">⚡</div>
+          <h1>Agentic Workflow Builder</h1>
+        </div>
+        <p class="subtitle">
+          Drag from a tool port to the agent to connect, then run your workflow
+        </p>
+      </header>
+
+      <div class="main-content">
+        <!-- Canvas -->
+        <div id="canvas">
+          <div class="canvas-header">
+            <span class="canvas-title">Workflow Canvas</span>
+            <span class="canvas-hint">
+              <span>💡</span>
+              Drag from output port → input port to connect
+            </span>
+          </div>
+
+          <div class="canvas-area">
+            <svg id="connectionSvg"></svg>
+
+            <!-- Tool Node 1: DuckDuckGo -->
+            <div id="toolNode1" class="node" data-type="tool">
+              <div class="node-header tool-header">
+                <span class="node-icon">🔍</span>
+                <span class="node-title">DuckDuckGo Search</span>
+              </div>
+              <div class="node-body">
+                Searches the web for real-time information
+              </div>
+              <div
+                class="connection-port output-port"
+                data-node="toolNode1"
+              ></div>
+            </div>
+
+            <!-- Tool Node 2: Wikipedia -->
+            <div id="toolNode2" class="node" data-type="tool">
+              <div class="node-header tool-header wikipedia">
+                <span class="node-icon">📚</span>
+                <span class="node-title">Wikipedia Search</span>
+              </div>
+              <div class="node-body">
+                Searches Wikipedia for encyclopedic knowledge
+              </div>
+              <div
+                class="connection-port output-port"
+                data-node="toolNode2"
+              ></div>
+            </div>
+
+            <!-- Agent Node -->
+            <div id="agentNode" class="node agent-clickable" data-type="agent">
+              <div
+                class="connection-port input-port"
+                data-node="agentNode"
+              ></div>
+              <div class="node-header agent-header">
+                <span class="node-icon">🧠</span>
+                <span class="node-title">AI Summarizer Agent</span>
+              </div>
+              <div class="node-body">
+                Processes and summarizes information using GPT-4
+              </div>
+              <div class="node-footer">
+                <span>⚙️</span>
+                Click to edit system prompt
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Control Panel -->
+        <div class="control-panel">
+          <!-- Connection Status -->
+          <div class="panel-section">
+            <div class="panel-title">Connection Status</div>
+            <div class="connection-status">
+              <span class="status-dot disconnected"></span>
+              <span id="statusText">Not Connected</span>
+            </div>
+            <button
+              id="disconnectBtn"
+              class="btn btn-disconnect"
+              disabled
+              style="margin-top: 12px"
+            >
+              ✂️ Disconnect
+            </button>
+          </div>
+
+          <!-- Tool Selection -->
+          <div class="panel-section">
+            <div class="panel-title">Quick Tool Select</div>
+            <div class="tool-select-group">
+              <div class="tool-option" data-tool="duckduckgo">
+                <div class="tool-radio"></div>
+                <div class="tool-info">
+                  <div class="tool-name">🔍 DuckDuckGo Search</div>
+                  <div class="tool-desc">Real-time web search results</div>
+                </div>
+              </div>
+              <div class="tool-option" data-tool="wikipedia">
+                <div class="tool-radio"></div>
+                <div class="tool-info">
+                  <div class="tool-name">📚 Wikipedia Search</div>
+                  <div class="tool-desc">Encyclopedic knowledge base</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- User Input -->
+          <div class="panel-section">
+            <div class="panel-title">User Input</div>
+            <div class="input-section">
+              <textarea
+                id="userInput"
+                rows="3"
+                placeholder="Enter your query (e.g., 'What is artificial intelligence?')..."
+              >
+What are the latest trends in artificial intelligence?</textarea
+              >
+            </div>
+          </div>
+
+          <!-- Run Button -->
+          <div class="panel-section">
+            <button id="runBtn" class="btn btn-run">▶️ Run Workflow</button>
+          </div>
+
+          <!-- Output -->
+          <div class="panel-section">
+            <div class="panel-title">Output</div>
+            <div id="outputBox" class="output-box">
+              <div class="output-placeholder">
+                Results will appear here after running the workflow...
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- System Prompt Modal -->
+    <div id="modalOverlay" class="modal-overlay">
+      <div class="modal">
+        <div class="modal-header">
+          <span class="modal-title">
+            <span>🧠</span>
+            Agent System Prompt
+          </span>
+          <button id="modalClose" class="modal-close">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="modal-field">
+            <label for="modelSelect">OpenAI Model:</label>
+            <select id="modelSelect" class="model-select">
+              <option value="gpt-4.1">GPT-4.1 (Latest)</option>
+              <option value="gpt-4o">GPT-4o</option>
+              <option value="gpt-4o-mini">GPT-4o Mini (Fast)</option>
+              <option value="gpt-4-turbo">GPT-4 Turbo</option>
+              <option value="gpt-3.5-turbo" selected>
+                GPT-3.5 Turbo (Cheap)
+              </option>
+              <option value="o1">o1 (Reasoning)</option>
+              <option value="o1-mini">o1-mini</option>
+            </select>
+          </div>
+          <div class="modal-field">
+            <label for="systemPrompt">System Prompt:</label>
+            <textarea
+              id="systemPrompt"
+              placeholder="Enter the system prompt for the AI agent..."
+            >
+You are a helpful assistant that provides clear, concise summaries. Keep your response under 200 words.</textarea
+            >
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button id="modalCancel" class="btn btn-modal-cancel">Cancel</button>
+          <button id="modalSave" class="btn btn-modal-save">
+            Save Changes
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+  </body>
+</html>
