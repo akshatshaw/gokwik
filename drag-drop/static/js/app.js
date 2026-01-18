@@ -22,6 +22,7 @@ const canvasArea = document.querySelector('.canvas-area');
 const svg = document.getElementById('connectionSvg');
 const toolNode1 = document.getElementById('toolNode1');
 const toolNode2 = document.getElementById('toolNode2');
+const toolNode3 = document.getElementById('toolNode3');
 const agentNode = document.getElementById('agentNode');
 const runBtn = document.getElementById('runBtn');
 const disconnectBtn = document.getElementById('disconnectBtn');
@@ -32,6 +33,7 @@ const statusText = document.getElementById('statusText');
 const modalOverlay = document.getElementById('modalOverlay');
 const systemPromptInput = document.getElementById('systemPrompt');
 const toolOptions = document.querySelectorAll('.tool-option');
+const ragFileInput = document.getElementById('ragFileInput');
 
 // ===========================================
 // Initialization
@@ -54,7 +56,7 @@ function init() {
 // Node Dragging
 // ===========================================
 function initNodeDrag() {
-  const nodes = [toolNode1, toolNode2, agentNode];
+  const nodes = [toolNode1, toolNode2, toolNode3, agentNode];
   
   nodes.forEach(node => {
     node.addEventListener('mousedown', handleNodeMouseDown);
@@ -299,14 +301,19 @@ function updateStatus() {
   
   if (isConnected) {
     const conn = connections[0];
-    const toolName = conn.fromNode === 'toolNode1' ? 'DuckDuckGo' : 'Wikipedia';
+    let toolName = 'Unknown';
+    if (conn.fromNode === 'toolNode1') toolName = 'DuckDuckGo';
+    else if (conn.fromNode === 'toolNode2') toolName = 'Wikipedia';
+    else if (conn.fromNode === 'toolNode3') toolName = 'RAG (Local)';
     statusDot.classList.add('connected');
     statusDot.classList.remove('disconnected');
     statusText.textContent = `${toolName} → Agent`;
     disconnectBtn.disabled = false;
     
     // Update selected tool based on connection
-    selectedTool = conn.fromNode === 'toolNode1' ? 'duckduckgo' : 'wikipedia';
+    if (conn.fromNode === 'toolNode1') selectedTool = 'duckduckgo';
+    else if (conn.fromNode === 'toolNode2') selectedTool = 'wikipedia';
+    else if (conn.fromNode === 'toolNode3') selectedTool = 'rag';
     updateToolSelection();
   } else {
     statusDot.classList.remove('connected');
@@ -338,11 +345,18 @@ function initToolSelection() {
       updateToolSelection();
       
       // Auto-connect if not connected
-      const targetNode = tool === 'duckduckgo' ? 'toolNode1' : 'toolNode2';
-      connections = [{
-        fromNode: targetNode,
-        toNode: 'agentNode'
-      }];
+      let targetNode = 'toolNode1';
+      if (tool === 'duckduckgo') targetNode = 'toolNode1';
+      else if (tool === 'wikipedia') targetNode = 'toolNode2';
+      else if (tool === 'rag') targetNode = 'toolNode3';
+
+      connections = [{ fromNode: targetNode, toNode: 'agentNode' }];
+
+      // If selecting RAG, trigger file upload dialog
+      if (tool === 'rag') {
+        // open file picker to upload documents
+        if (ragFileInput) ragFileInput.click();
+      }
       
       redrawConnections();
       updateStatus();
@@ -397,6 +411,56 @@ function initModal() {
   });
 }
 
+// ===========================================
+// RAG Upload Handling
+// ===========================================
+if (ragFileInput) {
+  ragFileInput.addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    await uploadRagFile(file);
+    // clear selection
+    e.target.value = '';
+  });
+}
+
+async function uploadRagFile(file) {
+  try {
+    const fd = new FormData();
+    fd.append('file', file);
+
+    outputBox.innerHTML = `⏳ Uploading ${file.name}...`;
+    outputBox.className = 'output-box loading';
+
+    const resp = await fetch('/upload', {
+      method: 'POST',
+      body: fd
+    });
+    const data = await resp.json();
+    if (data.success) {
+      showOutput(`Uploaded ${data.filename} — added ${data.added_chunks} chunks.`, 'success');
+      // ensure RAG is selected and connected
+      selectedTool = 'rag';
+      updateToolSelection();
+      connections = [{ fromNode: 'toolNode3', toNode: 'agentNode' }];
+      redrawConnections();
+      updateStatus();
+    } else {
+      showOutput(`Upload failed: ${data.error || JSON.stringify(data)}`, 'error');
+    }
+  } catch (err) {
+    showOutput(`Upload error: ${err.message}`, 'error');
+  }
+}
+
+// clicking/double-clicking tool node 3 opens upload
+if (toolNode3) {
+  toolNode3.addEventListener('dblclick', (e) => {
+    e.stopPropagation();
+    if (ragFileInput) ragFileInput.click();
+  });
+}
+
 function openModal() {
   systemPromptInput.value = systemPrompt;
   document.getElementById('modelSelect').value = selectedModel;
@@ -428,7 +492,10 @@ runBtn.addEventListener('click', async () => {
   // Determine which tool is connected
   let connectedTool = null;
   if (connections.length > 0) {
-    connectedTool = connections[0].fromNode === 'toolNode1' ? 'duckduckgo' : 'wikipedia';
+    const fn = connections[0].fromNode;
+    if (fn === 'toolNode1') connectedTool = 'duckduckgo';
+    else if (fn === 'toolNode2') connectedTool = 'wikipedia';
+    else if (fn === 'toolNode3') connectedTool = 'rag';
   }
   
   // Show loading

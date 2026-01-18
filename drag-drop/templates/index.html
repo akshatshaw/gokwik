@@ -69,6 +69,21 @@
               ></div>
             </div>
 
+            <!-- Tool Node 3: RAG -->
+            <div id="toolNode3" class="node" data-type="tool">
+              <div class="node-header tool-header">
+                <span class="node-icon">📂</span>
+                <span class="node-title">RAG Tool- Double-Click to Upload Docs</span>
+              </div>
+              <div class="node-body">
+                Retrieve context from uploaded documents (RAG)
+              </div>
+              <div
+                class="connection-port output-port"
+                data-node="toolNode3"
+              ></div>
+            </div>
+
             <!-- Agent Node -->
             <div id="agentNode" class="node agent-clickable" data-type="agent">
               <div
@@ -125,6 +140,13 @@
                 <div class="tool-info">
                   <div class="tool-name">📚 Wikipedia Search</div>
                   <div class="tool-desc">Encyclopedic knowledge base</div>
+                </div>
+              </div>
+              <div class="tool-option" data-tool="rag">
+                <div class="tool-radio"></div>
+                <div class="tool-info">
+                  <div class="tool-name">📂 RAG (Local Docs)</div>
+                  <div class="tool-desc">Upload docs and retrieve context</div>
                 </div>
               </div>
             </div>
@@ -205,6 +227,9 @@ You are a helpful assistant that provides clear, concise summaries. Keep your re
         </div>
       </div>
     </div>
+
+    <!-- Hidden file input for RAG uploads -->
+    <input type="file" id="ragFileInput" style="display: none" />
 
     <script src="/static/js/app.js"></script>
   </body>
